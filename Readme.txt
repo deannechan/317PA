@@ -32,7 +32,7 @@ Date:
 ~ Instructions for running program
 cd src
 javac webserver/*.java
-java webServer.Server -document_root "./files" -port 8080
+java webserver.Server -document_root "../files" -port 8080
 # open the browser -- localhost:8080
 
 
