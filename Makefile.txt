@@ -1,0 +1,6 @@
+Compiling and running instructions:
+
+- cd until src folder
+- In terminal, execute the following to compile and run:
+javac webserver/*.java
+java webServer.Server -document_root "./files" -port 8080
