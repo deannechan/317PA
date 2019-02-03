@@ -40,7 +40,7 @@ Instructions for running program
 --------
 1. Go to folder `cd src`  
 2. Compile java files `javac webserver/*.java`  
-3. Run the server `java webServer.Server -document_root "./files" -port 8080`  
+3. Run the server `java webserver.Server -document_root "../files" -port 8080`  
 4. Open the browser `localhost:8080`  
 5. Open terminal and execute commands
 `telnet localhost 8080`  
