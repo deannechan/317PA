@@ -17,14 +17,12 @@ import java.util.StringTokenizer;
 
 public class HTTPServer implements Runnable{ 
 	
-	File WEB_ROOT = new File("./files");
+	File WEB_ROOT = new File("../files");
 	static final String DEFAULT_FILE = "index.html";
 	static final String FILE_NOT_FOUND = "404.html";
 	static final String PERM_ERROR = "403.html";
-	static final String METHOD_NOT_SUPPORTED = "not_supported.html";
 	static final String OTHER_ERROR = "400.html";
-
-	// Client connection via Socket Class
+	static final String METHOD_NOT_SUPPORTED = "501.html";
 	private Socket connection;
 	
 	public HTTPServer(String root, Socket conn) throws IOException {
@@ -50,64 +48,44 @@ public class HTTPServer implements Runnable{
 		String fileRequested = null;
 		
 		try {
-			// we read characters from the client via input stream on the socket
 			in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			// we get character output stream to client (for headers)
 			out = new PrintWriter(connection.getOutputStream());
-			// get binary output stream to client (for requested data)
 			dataOut = new BufferedOutputStream(connection.getOutputStream());
 			
-			// get first line of the request from the client
 			String input = in.readLine();
-			// we parse the request with a string tokenizer
+			System.out.println("\n" + input);
 			StringTokenizer parse = new StringTokenizer(input);
 			String method = parse.nextToken().toUpperCase();
 			
-			if (method.equals("GET") && parse.hasMoreElements())
-		         fileRequested = parse.nextToken().toLowerCase();
-			else
-		         throw new FileNotFoundException();
-			
-			// we support only GET methods
+			// not implemented method
 			if (!method.equals("GET")  &&  !method.equals("HEAD")) {
-				// we return the not supported file to the client
-				File file = new File(WEB_ROOT, METHOD_NOT_SUPPORTED);
-				int fileLength = (int) file.length();
-				String contentMimeType = "text/html";
-				//read content to return to client
-				byte[] fileData = readFileData(file, fileLength);
-					
-				// we send HTTP Headers with data to client
-				out.println("HTTP/1.1 501 Not Implemented");
-				out.println("Server: Java HTTP Server from SSaurel : 1.0");
-				out.println("Date: " + new Date());
-				out.println("Content-type: " + contentMimeType);
-				out.println("Content-length: " + fileLength);
-				out.println(); // blank line between headers and content, very important !
-				out.flush(); // flush character output stream buffer
-				// file
-				dataOut.write(fileData, 0, fileLength);
-				dataOut.flush();
-				
+				error501(out, dataOut, fileRequested);
 			} else {
-				// GET or HEAD method
+				if (method.equals("GET") && parse.hasMoreElements())
+		        	fileRequested = parse.nextToken().toLowerCase();
+				else {
+					// bad request
+					error400(out, dataOut, fileRequested);
+				}
+	
 				if (fileRequested.endsWith("/")) {
 					fileRequested += DEFAULT_FILE;
 				}
-				
-				while (fileRequested.indexOf("/")==0)// Remove leading / from filename
+
+				// Remove leading / from filename
+				while (fileRequested.indexOf("/")==0)
 					fileRequested=fileRequested.substring(1);
 				
 				File file = new File(WEB_ROOT, fileRequested);
 				if(file.exists() && !(file.canRead())) {
-					out.print("HTTP/1.0 403 Forbidden\r\n"+ "Location: /" + fileRequested + "/\r\n\r\n");
-			        out.close();
-			        return;
+					error403(out, dataOut, fileRequested);
+					return;
 				}
+
 				int fileLength = (int) file.length();
 				String content = getContentType(fileRequested);
-				
-				if (method.equals("GET")) { // GET method so we return content
+
+				if (method.equals("GET")) {
 					byte[] fileData = readFileData(file, fileLength);
 					
 					// send HTTP Headers
@@ -115,21 +93,19 @@ public class HTTPServer implements Runnable{
 					out.println("Date: " + new Date());
 					out.println("Content-type: " + content);
 					out.println("Content-length: " + fileLength);
-					out.println(); // blank line between headers and content, very important !
-					out.flush(); // flush character output stream buffer
+					out.println();
+					out.flush();
 					
 					dataOut.write(fileData, 0, fileLength);
 					dataOut.flush();
 				}	
-			}
-			
+			}	
 		} catch (FileNotFoundException fnfe) {
 			try {
-				fileNotFound(out, dataOut, fileRequested);	
+				error404(out, dataOut, fileRequested);	
 			} catch (IOException ioe) {
 				System.err.println("Error with file not found exception : " + ioe.getMessage());
-			}
-			
+			}		
 		} catch (IOException ioe) {
 			System.err.println("Server error : " + ioe);
 		} finally {
@@ -141,9 +117,7 @@ public class HTTPServer implements Runnable{
 			} catch (Exception e) {
 				System.err.println("Error closing stream : " + e.getMessage());
 			} 
-		}
-		
-		
+		}	
 	}
 	
 	private byte[] readFileData(File file, int fileLength) throws IOException {
@@ -156,8 +130,7 @@ public class HTTPServer implements Runnable{
 		} finally {
 			if (fileIn != null) 
 				fileIn.close();
-		}
-		
+		}		
 		return fileData;
 	}
 	
@@ -175,7 +148,8 @@ public class HTTPServer implements Runnable{
 		return content;
 	}
 	
-	private void fileNotFound(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
+	// Not Found error
+	private void error404(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
 		File file = new File(WEB_ROOT, FILE_NOT_FOUND);
 		int fileLength = (int) file.length();
 		String content = "text/html";
@@ -185,12 +159,64 @@ public class HTTPServer implements Runnable{
 		out.println("Date: " + new Date());
 		out.println("Content-type: " + content);
 		out.println("Content-length: " + fileLength);
-		out.println(); // blank line between headers and content, very important !
-		out.flush(); // flush character output stream buffer
+		out.println();
+		out.flush();
 		
 		dataOut.write(fileData, 0, fileLength);
 		dataOut.flush();
+	}
 
+	// Forbidden error
+	private void error403(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
+		File file = new File(WEB_ROOT, PERM_ERROR);
+		int fileLength = (int) file.length();
+		String content = "text/html";
+		byte[] fileData = readFileData(file, fileLength);
+		
+		out.println("HTTP/1.1 403 Forbidden");
+		out.println("Date: " + new Date());
+		out.println("Content-type: " + content);
+		out.println("Content-length: " + fileLength);
+		out.println();
+		out.flush();
+		
+		dataOut.write(fileData, 0, fileLength);
+		dataOut.flush();
+	}
+
+	// Bad request error
+	private void error400(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
+		File file = new File(WEB_ROOT, OTHER_ERROR);
+		int fileLength = (int) file.length();
+		String content = "text/html";
+		byte[] fileData = readFileData(file, fileLength);
+		
+		out.println("HTTP/1.1 400 Bad Request");
+		out.println("Date: " + new Date());
+		out.println("Content-type: " + content);
+		out.println("Content-length: " + fileLength);
+		out.println();
+		out.flush();
+		
+		dataOut.write(fileData, 0, fileLength);
+		dataOut.flush();
 	}
 	
+	// Not Implemented error
+	private void error501(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
+		File file = new File(WEB_ROOT, METHOD_NOT_SUPPORTED);
+		int fileLength = (int) file.length();
+		String content = "text/html";
+		byte[] fileData = readFileData(file, fileLength);
+		
+		out.println("HTTP/1.1 501 Not Implemented");
+		out.println("Date: " + new Date());
+		out.println("Content-type: " + content);
+		out.println("Content-length: " + fileLength);
+		out.println();
+		out.flush();
+		
+		dataOut.write(fileData, 0, fileLength);
+		dataOut.flush();
+	}
 }

@@ -19,9 +19,8 @@ public class Server {
 					+ port + " ...\n");
 			
 			while (true) {
-				// waits for incoming client/TCP connection request and processes it
+				// waits for incoming connection request and processes it
 				HTTPServer myServer = new HTTPServer(rootFolder, serverSocket.accept());
-				// create dedicated thread to manage the client connection
 				Thread thread = new Thread(myServer);
 				thread.start();
 			}
