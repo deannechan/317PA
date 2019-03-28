@@ -3,18 +3,18 @@
 
 High-level description of the assignment and what the program(s) does
 --------
-server is ran and listening on a given port
-forever loop that listens for connection:
-   create a new thread to accept incoming connection
-   parse HTTP request
-   GET method else return HTTP Status Code 501 Not Implemented
-   ensure well-formed request else return HTTP Status Code 400 Bad request
-   if '/' is input, append index.html
-   ensure file exists else return HTTP Status Code 404 Not Found
-   ensure file permissions are set properly else return HTTP Status Code 403 Forbidden
-   transmit file contents by reading the file and write out to socket
-   close input and output streams
-   close connection
+server is ran and listening on a given port  
+forever loop that listens for connection:  
+&nbsp;&nbsp;&nbsp;create a new thread to accept incoming connection  
+&nbsp;&nbsp;&nbsp;parse HTTP request  
+&nbsp;&nbsp;&nbsp;GET method else return HTTP Status Code 501 Not Implemented  
+&nbsp;&nbsp;&nbsp;ensure well-formed request else return HTTP Status Code 400 Bad request  
+&nbsp;&nbsp;&nbsp;if '/' is input, append index.html  
+&nbsp;&nbsp;&nbsp;ensure file exists else return HTTP Status Code 404 Not Found  
+&nbsp;&nbsp;&nbsp;ensure file permissions are set properly else return HTTP Status Code 403 Forbidden  
+&nbsp;&nbsp;&nbsp;transmit file contents by reading the file and write out to socket  
+&nbsp;&nbsp;&nbsp;close input and output streams  
+&nbsp;&nbsp;&nbsp;close connection  
 
 
 A list of submitted files
